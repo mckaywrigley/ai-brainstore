@@ -1,6 +1,6 @@
 # AI Brainstore
 
-This is a simple proof-of-concept for a brain for an AI agent.
+This is a proof-of-concept for a brain for an AI agent.
 
 See a [demo]().
 
