@@ -1,8 +1,8 @@
 # AI Brainstore
 
-This is a proof-of-concept for a brain for an AI agent.
+This is a proof-of-concept of a brain for an AI agent.
 
-See a [demo]().
+See a [demo](https://twitter.com/mckaywrigley/status/1647292799006707717?s=46&t=AowqkodyK6B4JccSOxSPew).
 
 ![AI BRAINSTORE](./public/screenshot.png)
 
@@ -38,7 +38,7 @@ Create a .env.local file in the root of the repo with the following:
 OPENAI_API_KEY=YOUR_KEY_HERE # required
 DEFAULT_MODEL=gpt-3.5-turbo # or gpt-4
 COLLECTION_NAME=ai-brainstore # name for your brainsstore
-REVIEW_MEMORIES=TRUE # false to disable
+REVIEW_MEMORIES=true # false to disable
 SERPAPI_API_KEY=YOUR_KEY_HERE # optional (works way better if used!)
 ```
 

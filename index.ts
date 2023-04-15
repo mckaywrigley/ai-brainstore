@@ -31,9 +31,7 @@ dotenv.config();
         const searchAnswer = await answerFromSearch(brain, input);
         console.log(chalk.green(`${searchAnswer}\n`));
 
-        console.log(chalk.yellow(`\nAdding memory...\n`));
-
-        if (process.env.REVIEW_MEMORIES) {
+        if (process.env.REVIEW_MEMORIES === "true") {
           rl.question(chalk.blue("\nIs this answer accurate? (y/n)\n"), async (review) => {
             if (review === "y") {
               await addMemory(brain, searchAnswer);
