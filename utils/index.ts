@@ -5,21 +5,24 @@ import { VectorDBQAChain } from "langchain/chains";
 import { ChatOpenAI } from "langchain/chat_models/openai";
 import { OpenAIEmbeddings } from "langchain/embeddings/openai";
 import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { SerpAPI } from "langchain/tools";
+import { Calculator } from "langchain/tools/calculator";
 import { WebBrowser } from "langchain/tools/webbrowser";
 import { Chroma } from "langchain/vectorstores/chroma";
 import { HNSWLib } from "langchain/vectorstores/hnswlib";
 
 export const checkForBrain = async (client: ChromaClient, embedder: OpenAIEmbeddingFunction) => {
-  const collectionName = process.env.COLLECTION_NAME || "learning-agent-brain";
+  const collectionName = process.env.COLLECTION_NAME;
+  if (!collectionName) throw new Error("COLLECTION_NAME not set in .env file.");
 
   const collections = await client.listCollections();
   const learningAgentCollection = collections.find((collection: Collection) => collection.name === collectionName);
 
   if (learningAgentCollection) {
-    console.log(chalk.yellow("Brain found.\n"));
+    console.log(chalk.yellow("\nBrain found.\n"));
     return await client.getCollection(collectionName, embedder);
   } else {
-    console.log(chalk.yellow("Brain not found. Ceating a new brain.\n"));
+    console.log(chalk.yellow("\nBrain not found. Ceating a new brain.\n"));
     const collection = await client.createCollection(collectionName, {}, embedder);
     await addTestData(collection);
     return collection;
@@ -27,7 +30,7 @@ export const checkForBrain = async (client: ChromaClient, embedder: OpenAIEmbedd
 };
 
 export const answerFromMemory = async (brain: Collection, input: string) => {
-  const query = `Today is ${new Date().toDateString()}. You are given the following input: ${input}. If the given documents are sufficient for an accurate answer, then use them to respond. If not, respond with INSUFFICIENT_DATA exactly like that.`;
+  const query = `You are given the following input: ${input}. You can only use the given documents - do not recall info from your own memory. If the given documents are sufficient for an accurate answer, then use them to give an accurate, detailed answer. If not, respond exactly with INSUFFICIENT_DATA.`;
 
   let memoryCount = await brain.count();
   if (memoryCount > 5) {
@@ -55,25 +58,40 @@ export const answerFromMemory = async (brain: Collection, input: string) => {
 };
 
 export const answerFromSearch = async (brain: Collection, input: string) => {
-  const inputPlus = `Find an answer to the following input: ${input}. For reference, today's date is ${new Date().toDateString()}.`;
+  const inputPlus = `Find an answer to the following input: ${input}. Respond in a complete sentence that reiterates the input and provides an accurate, detailed answer.`;
 
   const model = new ChatOpenAI({ temperature: 0 });
   const embeddings = new OpenAIEmbeddings();
 
-  const tools = [new WebBrowser({ model, embeddings })];
+  const tools = [new WebBrowser({ model, embeddings }), new Calculator()];
+
+  if (process.env.SERPAPI_API_KEY) {
+    tools.push(new SerpAPI(process.env.SERPAPI_API_KEY));
+  }
+
   const executor = await initializeAgentExecutor(tools, model, "chat-zero-shot-react-description");
 
-  const result = await executor.call({ input: inputPlus });
-
-  return result.output;
+  try {
+    const result = await executor.call({ input: inputPlus });
+    return result.output;
+  } catch (e) {
+    console.log(chalk.red("\nI made mistake. Trying again..."));
+    return answerFromSearch(brain, input);
+  }
 };
 
-export const addTestData = async (collection: any) => {
+export const addMemory = async (brain: Collection, memory: string) => {
+  const memoryCount = await brain.count();
+
+  await brain.add(memoryCount.toString(), undefined, {}, memory);
+};
+
+const addTestData = async (collection: any) => {
   // add test data
   await collection.add(
     ["1", "2"],
     undefined,
-    [{ source: "Julius Caesar" }, { source: "Alexander the Great" }],
+    [{}, {}],
     [
       // Julius Caesar
       `Gaius Julius Caesar (/ˈsiːzər/; Latin: [ˈɡaːiʊs ˈjuːliʊs ˈkae̯sar]; 12 July 100 BC – 15 March 44 BC) was a Roman general and statesman. A member of the First Triumvirate, Caesar led the Roman armies in the Gallic Wars before defeating his political rival Pompey in a civil war, and subsequently became dictator from 49 BC until his assassination in 44 BC. He played a critical role in the events that led to the demise of the Roman Republic and the rise of the Roman Empire.
