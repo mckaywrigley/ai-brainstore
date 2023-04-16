@@ -22,7 +22,7 @@ export const checkForBrain = async (client: ChromaClient, embedder: OpenAIEmbedd
     console.log(chalk.yellow("\nBrain found.\n"));
     return await client.getCollection(collectionName, embedder);
   } else {
-    console.log(chalk.yellow("\nBrain not found. Ceating a new brain.\n"));
+    console.log(chalk.yellow("\nBrain not found. Creating a new brain.\n"));
     const collection = await client.createCollection(collectionName, {}, embedder);
     await addTestData(collection);
     return collection;
