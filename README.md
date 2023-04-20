@@ -32,7 +32,7 @@ npm i
 
 **3. Configure Settings**
 
-Create a .env.local file in the root of the repo with the following:
+Create a local .env file in the root of the repo with the following:
 
 ```bash
 OPENAI_API_KEY=YOUR_KEY_HERE # required
